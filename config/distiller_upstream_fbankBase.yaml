@@ -1,0 +1,75 @@
+# Audio DistilBERT Project Configuration
+# Author: fanfan-yu
+# Date: 2025.10.05
+# 
+# This file contains all hyperparameters and settings for the transformer model and training process
+
+# Model Architecture Configuration
+transformer:
+  input_dim: 80                                          # Mel-spectrogram feature dimension (80 channels)
+  downsample_rate: 1                                     # Frame stacking rate for sequence compression (1 = no stacking)
+  hidden_size: 768                                       # Transformer hidden dimension (embedding size)
+  num_hidden_layers: 1                                   # Number of transformer encoder layers
+  num_attention_heads: 12                                # Number of attention heads per layer (12 heads × 64 dim/head = 768)
+  intermediate_size: 3072                                # Feed-forward network hidden dimension (4× hidden_size)
+  hidden_act: "gelu"                                     # Activation function for feed-forward networks
+  hidden_dropout_prob: 0.1                               # Dropout probability for transformer hidden layers
+  attention_probs_dropout_prob: 0.1                      # Dropout for attention probability weights
+  initializer_range: 0.02                                # Xavier initialization standard deviation
+  layer_norm_eps: "1e-12"                               # Small epsilon for layer normalization numerical stability
+  
+  # Masked Acoustic Modeling (MAM) Configuration
+  mask_proportion: 0.15                                 # Fraction of frames to mask during training (15%)
+  mask_consecutive_min: 7                                # Minimum consecutive frames to mask (7 frames)
+  mask_consecutive_max: 7                                # Maximum consecutive frames to mask (7 frames)
+  mask_allow_overlap: True                              # Allow overlapping masks across different masking operations
+  mask_bucket_ratio: 1.2                                 # Mask sampling bucket size multiplier for non-overlapping mode
+  mask_frequency: 16                                     # Number of frequency bands to mask (set to 0 to disable)
+  noise_proportion: 0.15                                 # Fraction of samples to add Gaussian noise augmentation (15%)
+  
+  # Model Pruning Configuration
+  prune_headids: None                                   # Attention heads to prune (format: "0,1,2" or "12-15")
+  share_layer: False                                    # Whether to share weights across transformer layers
+  max_input_length: 0                                   # Maximum input sequence length (0 = unlimited)
+  pre_layer_norm: False                                 # Apply layer normalization before attention (vs after)
+
+# Training Optimization Configuration
+optimizer: 
+  type: 'adam'                                          # Optimizer choice: ['adam', 'adamW', 'lamb']
+  learning_rate: "2e-4"                                 # Base learning rate for training
+  loss_scale: 0                                         # Loss scaling for mixed-precision training (0 = dynamic)
+  warmup_proportion: 0.07                               # Linear warmup proportion of total training steps
+  gradient_accumulation_steps: 3                        # Number of gradient accumulation steps
+  gradient_clipping: 3.0                                # Gradient norm clipping threshold
+
+# Data Loading Configuration
+dataloader:
+  n_jobs: 12                                            # Number of data loading workers
+  batch_size: 12                                        # Training batch size
+  dev_batch_size: 12                                    # Evaluation batch size
+  max_timestep: 1500                                    # Maximum sequence length in frames
+  
+  # Data Paths Configuration
+  data_path: 'data/libri_fbank80'                      # Path to pre-extracted LibriSpeech fbank features
+  target_path: ''                                       # Alternative target for reconstruction (empty = same as input)
+  phone_path: 'data/cpc_phone'                          # Phone boundary labels for downstream tasks
+  
+  # Dataset Splits
+  train_set: ['train-clean-100']                        # Training set names from LibriSpeech
+  dev_set: ['dev-clean']                                # Development set names
+  test_set: ['test-clean']                              # Test set names
+  train_proportion: 1.0                                 # Proportion of training data to use
+
+# Training Runtime Configuration
+runner:
+  # Hardware Acceleration
+  apex: False                                           # Enable NVIDIA Apex mixed-precision training
+  
+  # Training Schedule
+  total_steps: 200000                                   # Total training steps (batches)
+  log_step: 2500                                        # Logging frequency (steps)
+  save_step: 10000                                      # Model checkpoint frequency (steps)
+  
+  # Experimental Features
+  duo_feature: False                                    # Use different input/output feature types
+  max_keep: 20                                          # Maximum number of checkpoints to keep
